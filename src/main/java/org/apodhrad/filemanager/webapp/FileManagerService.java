@@ -21,13 +21,20 @@ import javax.ws.rs.core.MultivaluedMap;
 import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 
-@Path("/rest")
+@Path("/api")
 public class FileManagerService {
 
 	private final String UPLOADED_FILE_PATH = "/home/apodhrad/Temp/data/";
 
 	@GET
-	@Path("/{path:.*}")
+	@Path("")
+	@Produces(MediaType.APPLICATION_JSON)
+	public List<FileInfo> getFileInfo() {
+		return getFileInfo("");
+	}
+
+	@GET
+	@Path("{path:.*}")
 	@Produces(MediaType.APPLICATION_JSON)
 	public List<FileInfo> getFileInfo(@PathParam("path") String path) {
 		List<FileInfo> fileInfoList = new ArrayList<FileInfo>();
@@ -46,7 +53,7 @@ public class FileManagerService {
 	}
 
 	@POST
-	@Path("/{path:.*}")
+	@Path("{path:.*}")
 	@Consumes("multipart/form-data")
 	public FileInfo uploadFile(@PathParam("path") String path, MultipartFormDataInput input) {
 
