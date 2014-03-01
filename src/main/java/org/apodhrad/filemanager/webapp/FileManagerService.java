@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import javax.activation.FileTypeMap;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -39,13 +40,11 @@ public class FileManagerService {
 	public List<FileInfo> getFileInfo(@PathParam("path") String path) {
 		List<FileInfo> fileInfoList = new ArrayList<FileInfo>();
 		File dir = new File(UPLOADED_FILE_PATH, path);
-		String[] fileName = dir.list();
+		File[] file = dir.listFiles();
 
-		if (fileName != null) {
-			for (int i = 0; i < fileName.length; i++) {
-				FileInfo fileInfo = new FileInfo();
-				fileInfo.setFileUrl("/" + fileName[i]);
-				fileInfoList.add(fileInfo);
+		if (file != null) {
+			for (int i = 0; i < file.length; i++) {
+				fileInfoList.add(createFileInfo(file[i]));
 			}
 		}
 
@@ -133,5 +132,16 @@ public class FileManagerService {
 			e.printStackTrace();
 		}
 
+	}
+
+	private FileInfo createFileInfo(File file) {
+		FileInfo fileInfo = new FileInfo();
+		fileInfo.setName(file.getName());
+		fileInfo.setUrl(file.getAbsolutePath().substring(UPLOADED_FILE_PATH.length()));
+		fileInfo.setSize(file.length());
+		fileInfo.setType(FileTypeMap.getDefaultFileTypeMap().getContentType(file));
+		fileInfo.setDirectory(file.isDirectory());
+		fileInfo.setLastModified(file.lastModified());
+		return fileInfo;
 	}
 }

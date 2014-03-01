@@ -8,6 +8,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
@@ -20,7 +21,17 @@ public class FileManagerWeb {
 	@Produces(MediaType.TEXT_HTML)
 	public void getFileInfo(@Context HttpServletRequest request, @Context HttpServletResponse response)
 			throws ServletException, IOException {
-		request.setAttribute("name", "Andy");
+		getFileInfo(request, response, "/");
+	}
+
+	@GET
+	@Path("/{path:.*}")
+	@Produces(MediaType.TEXT_HTML)
+	public void getFileInfo(@Context HttpServletRequest request, @Context HttpServletResponse response,
+			@PathParam("path") String path) throws ServletException, IOException {
+		request.setAttribute("path", path);
+		request.setAttribute("filesInfo", new FileManagerService().getFileInfo(path));
+
 		RequestDispatcher dispetcher = request.getRequestDispatcher("/WEB-INF/filemanager.jsp");
 		dispetcher.forward(request, response);
 	}
