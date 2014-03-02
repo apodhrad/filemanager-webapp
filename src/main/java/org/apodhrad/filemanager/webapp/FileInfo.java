@@ -11,6 +11,7 @@ public class FileInfo {
 	private String type;
 	private boolean isDirectory;
 	private long lastModified;
+	private String extension;
 
 	public String getUrl() {
 		return url;
@@ -58,6 +59,14 @@ public class FileInfo {
 
 	public void setLastModified(long lastModified) {
 		this.lastModified = lastModified;
+	}
+
+	public String getExtension() {
+		return extension;
+	}
+
+	public void setExtension(String extension) {
+		this.extension = extension;
 	}
 
 }

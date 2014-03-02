@@ -28,14 +28,14 @@ public class FileManagerService {
 	private final String UPLOADED_FILE_PATH = "/home/apodhrad/Temp/data/";
 
 	@GET
-	@Path("")
+	@Path("/")
 	@Produces(MediaType.APPLICATION_JSON)
 	public List<FileInfo> getFileInfo() {
-		return getFileInfo("");
+		return getFileInfo("/");
 	}
 
 	@GET
-	@Path("{path:.*}")
+	@Path("/{path:.*}")
 	@Produces(MediaType.APPLICATION_JSON)
 	public List<FileInfo> getFileInfo(@PathParam("path") String path) {
 		List<FileInfo> fileInfoList = new ArrayList<FileInfo>();
@@ -142,6 +142,19 @@ public class FileManagerService {
 		fileInfo.setType(FileTypeMap.getDefaultFileTypeMap().getContentType(file));
 		fileInfo.setDirectory(file.isDirectory());
 		fileInfo.setLastModified(file.lastModified());
+		fileInfo.setExtension(getFileExtension(file));
 		return fileInfo;
 	}
+
+	private String getFileExtension(File file) {
+		String name = file.getName();
+		try {
+			return name.substring(name.lastIndexOf("."));
+
+		} catch (Exception e) {
+			return "_blank";
+		}
+
+	}
+
 }

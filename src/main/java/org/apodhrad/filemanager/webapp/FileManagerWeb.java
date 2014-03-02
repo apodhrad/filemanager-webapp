@@ -1,6 +1,9 @@
 package org.apodhrad.filemanager.webapp;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
@@ -21,7 +24,7 @@ public class FileManagerWeb {
 	@Produces(MediaType.TEXT_HTML)
 	public void getFileInfo(@Context HttpServletRequest request, @Context HttpServletResponse response)
 			throws ServletException, IOException {
-		getFileInfo(request, response, "/");
+		getFileInfo(request, response, "");
 	}
 
 	@GET
@@ -29,10 +32,42 @@ public class FileManagerWeb {
 	@Produces(MediaType.TEXT_HTML)
 	public void getFileInfo(@Context HttpServletRequest request, @Context HttpServletResponse response,
 			@PathParam("path") String path) throws ServletException, IOException {
+		List<FileInfo> filesInfo = new FileManagerService().getFileInfo(path);
+		Collections.sort(filesInfo, new NameComparator());
+
 		request.setAttribute("path", path);
-		request.setAttribute("filesInfo", new FileManagerService().getFileInfo(path));
+
+		request.setAttribute("filesInfo", filesInfo);
 
 		RequestDispatcher dispetcher = request.getRequestDispatcher("/WEB-INF/filemanager.jsp");
 		dispetcher.forward(request, response);
+	}
+
+	private class NameComparator implements Comparator<FileInfo> {
+
+		public int compare(FileInfo o1, FileInfo o2) {
+			return o1.getName().toLowerCase().compareTo(o2.getName().toLowerCase());
+		}
+
+	}
+
+	private class SizeComparator implements Comparator<FileInfo> {
+
+		public int compare(FileInfo o1, FileInfo o2) {
+			if (o1.getSize() > o2.getSize()) {
+				return 1;
+			} else if (o1.getSize() < o2.getSize()) {
+				return -1;
+			} else {
+				return 0;
+			}
+		}
+
+	}
+	
+	public static void main(String[] args) {
+		System.out.println("aaa".compareTo("bbb"));
+		System.out.println("AAA".compareTo("bbb"));
+		System.out.println("ccc".compareTo("bbb"));
 	}
 }
