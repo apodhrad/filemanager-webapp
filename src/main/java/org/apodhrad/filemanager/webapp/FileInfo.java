@@ -12,6 +12,7 @@ public class FileInfo {
 	private boolean isDirectory;
 	private long lastModified;
 	private String extension;
+	private String icon;
 
 	public String getUrl() {
 		return url;
@@ -67,6 +68,14 @@ public class FileInfo {
 
 	public void setExtension(String extension) {
 		this.extension = extension;
+	}
+
+	public String getIcon() {
+		return icon;
+	}
+
+	public void setIcon(String icon) {
+		this.icon = icon;
 	}
 
 }

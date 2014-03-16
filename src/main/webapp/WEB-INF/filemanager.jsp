@@ -22,14 +22,14 @@
 			<th colspan="4"><hr /></th>
 		</tr>
 		<tr>
-			<td></td>
+			<td><img src="http://www.apache.org/icons/back.png"/></td>
 			<td><a href="<c:url value="/files/${fileInfo.url}/.." />">..</a></td>
 			<td></td>
 			<td></td>
 		</tr>
 		<c:forEach items="${filesInfo}" var="fileInfo">
 			<tr>
-				<td><img src='<c:url value="/icons_32/pdf.png"/>' /></td>
+				<td><img src="<c:out value ="${fileInfo.icon}"/>" /></td>
 				<td><a href="<c:url value="/files/${fileInfo.url}" />"><c:out
 							value="${fileInfo.name}" /></a></td>
 				<td><c:out value="${fileInfo.size}" /></td>

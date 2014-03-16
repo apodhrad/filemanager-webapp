@@ -5,6 +5,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -39,7 +41,12 @@ public class FileManagerService {
 	@Produces(MediaType.APPLICATION_JSON)
 	public List<FileInfo> getFileInfo(@PathParam("path") String path) {
 		List<FileInfo> fileInfoList = new ArrayList<FileInfo>();
+		
 		File dir = new File(UPLOADED_FILE_PATH, path);
+
+		if(new File(UPLOADED_FILE_PATH).equals(dir)) {
+			System.out.println("NO PARENT");
+		}
 		File[] file = dir.listFiles();
 
 		if (file != null) {
@@ -143,18 +150,49 @@ public class FileManagerService {
 		fileInfo.setDirectory(file.isDirectory());
 		fileInfo.setLastModified(file.lastModified());
 		fileInfo.setExtension(getFileExtension(file));
+		fileInfo.setIcon(getIcon(file));
 		return fileInfo;
 	}
 
 	private String getFileExtension(File file) {
 		String name = file.getName();
 		try {
-			return name.substring(name.lastIndexOf("."));
-
+			return name.substring(name.lastIndexOf(".") + 1);
 		} catch (Exception e) {
-			return "_blank";
+			return "unknown";
 		}
+	}
 
+	private String getIcon(File file) {
+		String icon;
+		if (file.isDirectory()) {
+			icon = "folder";
+		} else {
+			icon = getFileExtension(file);
+			if(icon.equals("txt")) {
+				icon = "text";
+			}
+		}
+		if (exists(getApacheIcon(icon))) {
+			return getApacheIcon(icon);
+		}
+		return getApacheIcon("unknown");
+	}
+
+	private static String getApacheIcon(String icon) {
+		return "http://www.apache.org/icons/" + icon + ".png";
+	}
+
+	public static boolean exists(String URLName) {
+		try {
+			HttpURLConnection.setFollowRedirects(false);
+			HttpURLConnection con = (HttpURLConnection) new URL(URLName).openConnection();
+			con.setRequestMethod("HEAD");
+			return (con.getResponseCode() == HttpURLConnection.HTTP_OK);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return false;
+		}
 	}
 
 }

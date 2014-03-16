@@ -44,9 +44,20 @@ public class FileManagerWeb {
 	}
 
 	private class NameComparator implements Comparator<FileInfo> {
+		
+		private boolean ascendent;
+		
+		public NameComparator() {
+			this(true);
+		}
+		
+		public NameComparator(boolean ascendent) {
+			this.ascendent = ascendent;
+		}
 
 		public int compare(FileInfo o1, FileInfo o2) {
-			return o1.getName().toLowerCase().compareTo(o2.getName().toLowerCase());
+			int result = o1.getName().toLowerCase().compareTo(o2.getName().toLowerCase());
+			return (ascendent ? 1 : -1) * result;
 		}
 
 	}
