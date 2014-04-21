@@ -15,27 +15,9 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-    	<groupId>org.jboss.resteasy</groupId>
-    	<artifactId>resteasy-servlet-initializer</artifactId>
-    	<version>3.0.6.Final</version>
-    	<scope>provided</scope>
-    </dependency>
-    <dependency>
-    	<groupId>org.jboss.resteasy</groupId>
-    	<artifactId>resteasy-multipart-provider</artifactId>
-    	<version>3.0.6.Final</version>
-    	<scope>provided</scope>
-    </dependency>
-    <dependency>
     	<groupId>javax.servlet</groupId>
     	<artifactId>javax.servlet-api</artifactId>
     	<version>3.0.1</version>
-    	<scope>provided</scope>
-    </dependency>
-    <dependency>
-    	<groupId>javax.servlet</groupId>
-    	<artifactId>jstl</artifactId>
-    	<version>1.2</version>
     	<scope>provided</scope>
     </dependency>
   </dependencies>
