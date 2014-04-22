@@ -2,6 +2,11 @@ package org.apodhrad.filemanager.webapp;
 
 import javax.xml.bind.annotation.XmlRootElement;
 
+/**
+ * 
+ * @author apodhrad
+ *
+ */
 @XmlRootElement
 public class FileInfo {
 

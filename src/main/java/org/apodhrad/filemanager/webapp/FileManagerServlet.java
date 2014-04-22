@@ -2,7 +2,6 @@ package org.apodhrad.filemanager.webapp;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,7 +14,6 @@ import java.text.Format;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 
@@ -29,15 +27,32 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
 
+import org.apodhrad.filemanager.webapp.comparator.NameComparator;
+
+/**
+ * 
+ * @author apodhrad
+ *
+ */
+
 @WebServlet(name = "FileManager", urlPatterns = { "/*" })
 @MultipartConfig
 public class FileManagerServlet extends HttpServlet {
 
-	public static final String UPLOADED_FILE_PATH = "/home/apodhrad/Temp/data/";
-	public static final Format DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm");
-	public static final int BUFFER_LENGTH = 4096;
-
 	private static final long serialVersionUID = -4179165806543404803L;
+
+	public static final String DATA_DIR_PROPERTY = "filemanager.data.dir";
+	public static final String DATA_DIR_DEFAULT = System.getProperty("user.dir") + File.separator + "data";
+	public static final String DATA_DIR = System.getProperty(DATA_DIR_PROPERTY, DATA_DIR_DEFAULT);
+	public static final Format DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+	public static final int BUFFER_LENGTH = 4 * 1024;
+
+	private FileManager fileManager;
+
+	public FileManagerServlet() {
+		super();
+		fileManager = new FileManager();
+	}
 
 	@Override
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -48,9 +63,9 @@ public class FileManagerServlet extends HttpServlet {
 		List<FileInfo> filesInfo = getFileInfo(path, contextPath);
 		Collections.sort(filesInfo, new NameComparator());
 
-		List<File> files = getFiles(path, contextPath);
-		File file = new File(UPLOADED_FILE_PATH, path);
-		if (file.isFile()) {
+		List<File> files = fileManager.getFiles(path);
+		File file = null;
+		if (files.size() == 1 && (file = files.get(0)).isFile()) {
 			InputStream in = new FileInputStream(file);
 
 			resp.setContentLength((int) file.length());
@@ -73,7 +88,8 @@ public class FileManagerServlet extends HttpServlet {
 		}
 
 		PrintWriter out = resp.getWriter();
-		out.println(getHtml(contextPath, path, filesInfo));
+		out.println(getHtml(contextPath, path, filesInfo, (String) req.getAttribute("infoMessage"),
+				(String) req.getAttribute("errorMessage")));
 		out.flush();
 		out.close();
 	}
@@ -87,35 +103,16 @@ public class FileManagerServlet extends HttpServlet {
 		final Part filePart = req.getPart("file");
 		final String fileName = getFileName(filePart);
 
-		OutputStream out = null;
-		InputStream filecontent = null;
-
 		try {
-			out = new FileOutputStream(new File(UPLOADED_FILE_PATH + File.separator + path + File.separator + fileName));
-			filecontent = filePart.getInputStream();
-
-			int read = 0;
-			final byte[] bytes = new byte[4096];
-
-			while ((read = filecontent.read(bytes)) != -1) {
-				out.write(bytes, 0, read);
-			}
-			doGet(req, resp);
-		} catch (FileNotFoundException fne) {
-			PrintWriter writer = resp.getWriter();
-			writer.println("You either did not specify a file to upload or are "
-					+ "trying to upload a file to a protected or nonexistent " + "location.");
-			writer.println("<br/> ERROR: " + fne.getMessage());
-			writer.flush();
-			writer.close();
-		} finally {
-			if (out != null) {
-				out.close();
-			}
-			if (filecontent != null) {
-				filecontent.close();
-			}
+			fileManager.saveFile(filePart.getInputStream(), path, fileName);
+			req.setAttribute("infoMessage", "File uploaded successfully.");
+		} catch (IOException ioe) {
+			ioe.printStackTrace();
+			req.setAttribute("errorMessage", "You either did not specify a file to upload or are "
+					+ "trying to upload a file to a protected or nonexistent location." + ioe.getMessage());
 		}
+
+		doGet(req, resp);
 	}
 
 	private String getFileName(final Part part) {
@@ -135,7 +132,7 @@ public class FileManagerServlet extends HttpServlet {
 		return s;
 	}
 
-	private String getHtml(String context, String path, List<FileInfo> filesInfo) {
+	private String getHtml(String context, String path, List<FileInfo> filesInfo, String infoMsg, String errorMsg) {
 		StringBuffer table = new StringBuffer("<table>");
 		table.append("<tr><th></th><th>Name</th><th>Size</th><th>Last Modified</th></tr>");
 		table.append("<tr><th colspan=\"4\"><hr></th></tr>");
@@ -154,8 +151,16 @@ public class FileManagerServlet extends HttpServlet {
 				+ "File: <input type=\"file\" name=\"file\" id=\"file\"/><br>"
 				+ "<input type=\"submit\" value=\"Upload\" name=\"upload\" id=\"upload\"/>" + "</form>";
 
+		String msg = "";
+		if (infoMsg != null) {
+			msg += "<p>INFO: " + infoMsg + "</p>";
+		}
+		if (errorMsg != null) {
+			msg += "<p>ERROR: " + errorMsg + "</p>";
+		}
+
 		String html = "<!DOCTYPE html>" + "<html>" + "<head>" + "<meta charset=\"UTF-8\">" + "<title>Index of " + path
-				+ "</title>" + "</head>" + "<body><h1>Index of " + path + "</h1>" + table + form + "</body>"
+				+ "</title>" + "</head>" + "<body>" + msg + "<h1>Index of " + path + "</h1>" + table + form + "</body>"
 				+ "</html>";
 
 		return html;
@@ -172,9 +177,9 @@ public class FileManagerServlet extends HttpServlet {
 	public List<FileInfo> getFileInfo(String path, String contextPath) {
 		List<FileInfo> fileInfoList = new ArrayList<FileInfo>();
 
-		File dir = new File(UPLOADED_FILE_PATH, path);
+		File dir = new File(DATA_DIR, path);
 
-		if (new File(UPLOADED_FILE_PATH).equals(dir)) {
+		if (new File(DATA_DIR).equals(dir)) {
 			System.out.println("NO PARENT");
 		}
 		File[] file = dir.listFiles();
@@ -190,49 +195,6 @@ public class FileManagerServlet extends HttpServlet {
 		return fileInfoList;
 	}
 
-	public List<File> getFiles(String path, String contextPath) {
-		List<File> fileList = new ArrayList<File>();
-
-		File dir = new File(UPLOADED_FILE_PATH, path);
-
-		if (new File(UPLOADED_FILE_PATH).equals(dir)) {
-			System.out.println("NO PARENT");
-		}
-		File[] file = dir.listFiles();
-
-		if (file != null) {
-			for (int i = 0; i < file.length; i++) {
-				fileList.add(file[i]);
-			}
-		}
-
-		return fileList;
-	}
-
-	// /**
-	// * header sample { Content-Type=[image/png],
-	// Content-Disposition=[form-data;
-	// * name="file"; filename="filename.extension"] }
-	// **/
-	// // get uploaded filename, is there a easy way in RESTEasy?
-	// private String getFileName(MultivaluedMap<String, String> header) {
-	//
-	// String[] contentDisposition =
-	// header.getFirst("Content-Disposition").split(";");
-	//
-	// for (String filename : contentDisposition) {
-	// if ((filename.trim().startsWith("filename"))) {
-	//
-	// String[] name = filename.split("=");
-	//
-	// String finalFileName = name[1].trim().replaceAll("\"", "");
-	// return finalFileName;
-	// }
-	// }
-	// return "unknown";
-	// }
-
-	// save uploaded file to a defined location on the server
 	private void saveFile(InputStream uploadedInputStream, String serverLocation) {
 
 		try {
@@ -256,7 +218,7 @@ public class FileManagerServlet extends HttpServlet {
 	private FileInfo createFileInfo(File file) {
 		FileInfo fileInfo = new FileInfo();
 		fileInfo.setName(file.getName());
-		fileInfo.setUrl(file.getAbsolutePath().substring(UPLOADED_FILE_PATH.length()));
+		fileInfo.setUrl(file.getAbsolutePath().substring(DATA_DIR.length()));
 		fileInfo.setSize(file.length());
 		fileInfo.setType(FileTypeMap.getDefaultFileTypeMap().getContentType(file));
 		fileInfo.setDirectory(file.isDirectory());
@@ -307,36 +269,4 @@ public class FileManagerServlet extends HttpServlet {
 		}
 	}
 
-	private class NameComparator implements Comparator<FileInfo> {
-
-		private boolean ascendent;
-
-		public NameComparator() {
-			this(true);
-		}
-
-		public NameComparator(boolean ascendent) {
-			this.ascendent = ascendent;
-		}
-
-		public int compare(FileInfo o1, FileInfo o2) {
-			int result = o1.getName().toLowerCase().compareTo(o2.getName().toLowerCase());
-			return (ascendent ? 1 : -1) * result;
-		}
-
-	}
-
-	private class SizeComparator implements Comparator<FileInfo> {
-
-		public int compare(FileInfo o1, FileInfo o2) {
-			if (o1.getSize() > o2.getSize()) {
-				return 1;
-			} else if (o1.getSize() < o2.getSize()) {
-				return -1;
-			} else {
-				return 0;
-			}
-		}
-
-	}
 }
