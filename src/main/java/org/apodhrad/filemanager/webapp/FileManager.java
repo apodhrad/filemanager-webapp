@@ -8,10 +8,12 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.activation.FileTypeMap;
+
 /**
  * 
  * @author apodhrad
- *
+ * 
  */
 public class FileManager {
 
@@ -32,6 +34,10 @@ public class FileManager {
 		}
 
 		return fileList;
+	}
+	
+	public File getFile(String path) {
+		return new File(DATA_DIR, path);
 	}
 
 	public void saveFile(InputStream input, String path, String fileName) throws IOException {
@@ -55,4 +61,42 @@ public class FileManager {
 			}
 		}
 	}
+
+	public List<FileInfo> getFilesInfo(String path, String contextPath) {
+		List<FileInfo> fileInfoList = new ArrayList<FileInfo>();
+
+		File dir = new File(DATA_DIR, path);
+		File[] file = dir.listFiles();
+
+		if (file != null) {
+			for (int i = 0; i < file.length; i++) {
+				FileInfo fileInfo = createFileInfo(file[i]);
+				fileInfoList.add(fileInfo);
+			}
+		}
+
+		return fileInfoList;
+	}
+
+	private FileInfo createFileInfo(File file) {
+		FileInfo fileInfo = new FileInfo();
+		fileInfo.setName(file.getName());
+		fileInfo.setSize(file.length());
+		fileInfo.setType(FileTypeMap.getDefaultFileTypeMap().getContentType(file));
+		fileInfo.setType(getFileExtension(file));
+		fileInfo.setDirectory(file.isDirectory());
+		fileInfo.setLastModified(file.lastModified());
+		return fileInfo;
+	}
+	
+
+	private String getFileExtension(File file) {
+		String name = file.getName();
+		try {
+			return name.substring(name.lastIndexOf(".") + 1);
+		} catch (Exception e) {
+			return "unknown";
+		}
+	}
+
 }
